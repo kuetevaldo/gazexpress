@@ -1,3 +1,9 @@
-# gazexpress
-"Bringing gas delivery into the digital age in Cameroon."
->>>>>>> 03633e85205a0c8006c625f4a23483eaa5d23d2c
+# GazExpress 🔥
+
+Gas delivery web app built with React + Firebase.
+
+Features:
+- Order gas online
+- Track delivery
+- Admin dashboard
+- Vendor assignment
