@@ -5,11 +5,15 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 function OrderTracking() {
   const [phone, setPhone] = useState("");
   const [orders, setOrders] = useState([]);
+  const [searched, setSearched] = useState(false);
+  const [search, setSearch] = useState("");
 
   const handleTrack = () => {
+    setSearched(true);
+
     const q = query(
       collection(db, "orders"),
-      where("phone", "==", phone)
+      where("orderId", "==", search)
     );
 
     onSnapshot(q, (snapshot) => {
@@ -25,42 +29,71 @@ function OrderTracking() {
     <div style={styles.container}>
       <h2 style={styles.title}>📍 Track Your Order</h2>
 
-      <input
-        type="text"
-        placeholder="Enter your phone number"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        style={styles.input}
-      />
+      {/* INPUT SECTION */}
+      <div style={styles.searchBox}>
+        <input
+  type="text"
+  placeholder="Enter your Order ID (GX-...)"
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+/>
 
-      <button onClick={handleTrack} style={styles.button}>
-        Track Order
-      </button>
+        <button onClick={handleTrack} style={styles.button}>
+          🔍 Track Order
+        </button>
+      </div>
 
-      {orders.length === 0 ? (
-        <p style={styles.empty}>No orders found</p>
+      {/* RESULTS */}
+      {!searched ? (
+        <p style={styles.info}>Enter your order ID to track your order</p>
+      ) : orders.length === 0 ? (
+        <p style={styles.empty}>❌ No orders found</p>
       ) : (
-        orders.map((order) => (
-          <div key={order.id} style={styles.card}>
-            <p><strong>📍 {order.location}</strong></p>
-            <p>🔥 {order.brand} - {order.size}</p>
+        <div style={styles.grid}>
+          {orders.map((order) => (
+            <div key={order.id} style={styles.card}>
 
-            <p>
-              📦 Status:{" "}
-              <span style={getStatusStyle(order.status)}>
-                {order.status}
-              </span>
-            </p>
+              {/* HEADER */}
+              <div style={styles.header}>
+                <strong>📍 {order.location}</strong>
+                <span style={getStatusStyle(order.status)}>
+                  {getStatusIcon(order.status)} {order.status}
+                </span>
+              </div>
 
-            <p>🚚 Vendor: {order.assignedVendor || "Not assigned"}</p>
-          </div>
-        ))
+              <hr />
+
+              {/* DETAILS */}
+              <p>🔥 {order.brand} - {order.size}</p>
+
+              <p>
+                🚚 Vendor:{" "}
+                <strong>
+                  {order.assignedVendor || "Not assigned"}
+                </strong>
+              </p>
+
+              {/* DELIVERY INFO */}
+              <p style={styles.delivery}>
+                ⏱ Estimated delivery: 30–60 mins
+              </p>
+
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-// 🔥 STATUS COLORS
+// STATUS ICONS
+const getStatusIcon = (status) => {
+  if (status === "pending") return "⏳";
+  if (status === "delivering") return "🚚";
+  if (status === "delivered") return "✅";
+};
+
+// STATUS COLORS
 const getStatusStyle = (status) => {
   switch (status) {
     case "pending":
@@ -76,28 +109,32 @@ const getStatusStyle = (status) => {
 
 const styles = {
   container: {
-    maxWidth: "400px",
-    margin: "20px auto",
-    textAlign: "center",
+    padding: "20px",
+    maxWidth: "900px",
+    margin: "0 auto",
     color: "#111",
   },
 
   title: {
-    color: "#111",
-    marginBottom: "10px",
+    textAlign: "center",
+    marginBottom: "20px",
+  },
+
+  searchBox: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "20px",
   },
 
   input: {
+    flex: 1,
     padding: "12px",
-    width: "100%",
-    marginBottom: "10px",
     borderRadius: "8px",
     border: "1px solid #ddd",
   },
 
   button: {
     padding: "12px",
-    width: "100%",
     borderRadius: "8px",
     background: "linear-gradient(135deg, #ff6600, #ff9900)",
     color: "white",
@@ -106,23 +143,42 @@ const styles = {
     fontWeight: "bold",
   },
 
+  info: {
+    textAlign: "center",
+    color: "#fff",
+  },
+
   empty: {
-    marginTop: "15px",
+    textAlign: "center",
     color: "#777",
   },
 
-  card: {
-    border: "1px solid #ddd",
-    padding: "12px",
-    marginTop: "12px",
-    borderRadius: "10px",
-    textAlign: "left",
-    backgroundColor: "#ffffff",
-    color: "#111",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: "20px",
   },
 
-  // 🔥 STATUS COLORS
+  card: {
+    backgroundColor: "#fff",
+    padding: "15px",
+    borderRadius: "12px",
+    boxShadow: "0 6px 15px rgba(0,0,0,0.05)",
+  },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  delivery: {
+    marginTop: "10px",
+    fontSize: "13px",
+    color: "#555",
+  },
+
+  // STATUS COLORS
   pending: {
     backgroundColor: "#ef4444",
     color: "white",

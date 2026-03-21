@@ -4,8 +4,7 @@ import { collection, addDoc } from "firebase/firestore";
 import OrderDashboard from "./components/OrderDashboard";
 import OrderTracking from "./components/OrderTracking";
 
-// IMAGE
-import gasMan from "./images/Gas-man.jpg";
+import gasMan from "./images/Gas-man.webp";
 
 function App() {
   const [location, setLocation] = useState("");
@@ -16,6 +15,8 @@ function App() {
   const [success, setSuccess] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -23,165 +24,144 @@ function App() {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    try {
+    // 💰 SIMPLE PRICE LOGIC
+const priceList = {
+  "6kg": 3000,
+  "12.5kg": 6500,
+  "35kg": 15000,
+  "50kg": 22000,
+};
+
+const price = priceList[size] || 0;
+const total = price * quantity;
+const orderId = "GX-" + Date.now();
+
+      try {
       await addDoc(collection(db, "orders"), {
+        orderId, // 🆔 NEW
         location,
         brand,
         size,
         quantity,
         phone,
+        price,
+        total, // 💰 IMPORTANT
         status: "pending",
         createdAt: new Date(),
       });
 
       setSuccess(true);
     } catch (error) {
-      console.error(error);
+      alert("Something went wrong ❌");
     }
+
+    setLoading(false);
   };
 
   return (
-    <div style={styles.page}>
-      {/* ✅ NAVBAR */}
-      <div style={styles.navbar}>
-        <h2 style={styles.logo}>🔥 GazExpress</h2>
+  <div style={styles.page}>
+    {/* NAVBAR */}
+    <div style={styles.navbar}>
+      <h2 style={styles.logo}>🔥 GazExpress</h2>
 
-        <div>
-          <button
-            style={styles.navBtn}
-            onClick={() => {
-              setShowTracking(false);
-              setShowDashboard(false);
-            }}
-          >
-            Home
-          </button>
+      <div>
+        <button style={styles.navBtn} onClick={() => {
+          setShowTracking(false);
+          setShowDashboard(false);
+        }}>
+          Home
+        </button>
 
-          <button
-            style={styles.navBtn}
-            onClick={() => {
-              setShowTracking(true);
-              setShowDashboard(false);
-            }}
-          >
-            Track
-          </button>
+        <button style={styles.navBtn} onClick={() => {
+          setShowTracking(true);
+          setShowDashboard(false);
+        }}>
+          Track
+        </button>
 
-          <button
-            style={styles.navBtn}
-            onClick={() => {
-              setShowDashboard(true);
-              setShowTracking(false);
-            }}
-          >
-            Admin
-          </button>
-        </div>
+        <button style={styles.navBtn} onClick={() => {
+          setShowDashboard(true);
+          setShowTracking(false);
+        }}>
+          Admin
+        </button>
       </div>
+    </div>
 
-      {/* MAIN */}
-      <div
-        style={{
-          ...styles.container,
-          flexDirection: isMobile ? "column" : "row",
-        }}
-      >
-        {/* LEFT */}
-        <div
-          style={{
-            ...styles.left,
-            height: isMobile ? "40%" : "100%",
-          }}
-        >
-          <img
-            src={gasMan}
-            alt="GazExpress"
-            style={{
-              ...styles.image,
-              width: isMobile ? "60%" : "80%",
-            }}
-          />
-        </div>
+    {/* MAIN */}
+    <div style={styles.container}>
+      <div style={styles.overlay}>
 
-        {/* RIGHT */}
-        <div
-          style={{
-            ...styles.right,
-            height: isMobile ? "60%" : "100%",
-            padding: isMobile ? "20px" : "40px",
-          }}
-        >
-          {showTracking ? (
-            <OrderTracking />
-          ) : showDashboard ? (
-            <OrderDashboard />
-          ) : success ? (
-            <div style={styles.successBox}>
-              <h2>✅ Order Confirmed!</h2>
-              <p>Your gas is on the way 🚚</p>
+        {showTracking ? (
+          <OrderTracking />
+        ) : showDashboard ? (
+          <OrderDashboard />
+        ) : success ? (
+          <div style={styles.successBox}>
+            <h2>✅ Order Confirmed!</h2>
+            <p>Your gas is on the way 🚚</p>
 
-              <button
-                style={styles.button}
-                onClick={() => {
-                  setSuccess(false);
-                  setLocation("");
-                  setBrand("Bocom");
-                  setSize("12.5kg");
-                  setQuantity(1);
-                  setPhone("");
-                }}
-              >
-                Order Again
-              </button>
-            </div>
-          ) : (
-            <>
-              <h1 style={{ color: "#111" }}>🔥 GazExpress</h1>
-<p style={{ color: "#555" }}>
-  Fast gas delivery in Douala 🚚
-</p>
+            <button style={styles.button} onClick={() => {
+              setSuccess(false);
+              setLocation("");
+              setBrand("Bocom");
+              setSize("12.5kg");
+              setQuantity(1);
+              setPhone("");
+            }}>
+              Order Again
+            </button>
+          </div>
+        ) : (
+          <>
+            <h1 style={styles.title}>🔥 Fast Gas Delivery</h1>
 
-              <div style={styles.formWrapper}>
-  <form onSubmit={handleSubmit} style={styles.form}>
+            <p style={styles.subtitle}>
+              Order your cooking gas in minutes 🚚
+            </p>
+
+            <p style={styles.trust}>
+              ✔ Fast delivery • ✔ Trusted vendors • ✔ Available in Douala
+            </p>
+
+            <div style={styles.formWrapper}>
+              <form onSubmit={handleSubmit} style={styles.form}>
+
+                <label>📍 Location</label>
                 <input
                   type="text"
-                  placeholder="📍 Location"
+                  placeholder="Bonamousadi..."
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
                   style={styles.input}
                 />
 
-                <select
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  style={styles.input}
-                >
+                <label>🏢 Brand</label>
+                <select value={brand} onChange={(e) => setBrand(e.target.value)} style={styles.input}>
                   <option>Bocom</option>
                   <option>TotalEnergies</option>
                   <option>Tradex</option>
                   <option>Ola Energy</option>
                 </select>
 
-                <select
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                  style={styles.input}
-                >
+                <label>🧯 Size</label>
+                <select value={size} onChange={(e) => setSize(e.target.value)} style={styles.input}>
                   <option>6kg</option>
                   <option>12.5kg</option>
                   <option>35kg</option>
                   <option>50kg</option>
                 </select>
 
+                <label>🔢 Quantity</label>
                 <input
                   type="number"
                   value={quantity}
@@ -189,9 +169,10 @@ function App() {
                   style={styles.input}
                 />
 
+                <label>📞 Phone</label>
                 <input
                   type="tel"
-                  placeholder="📞 Phone"
+                  placeholder="6XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
@@ -199,36 +180,36 @@ function App() {
                 />
 
                 <button type="submit" style={styles.button}>
-                  Order Gas 🚚
+                  {loading ? "Sending..." : "Order Gas 🚚"}
                 </button>
+
               </form>
-              </div>
-            </>
-            
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
+  
 }
 
 const styles = {
   page: {
     display: "flex",
     flexDirection: "column",
-    height: "100vh",
+    minHeight: "100vh",
   },
 
   navbar: {
     display: "flex",
     justifyContent: "space-between",
     padding: "15px 30px",
-    borderBottom: "1px solid #eee",
     backgroundColor: "#fff",
   },
 
   logo: {
-    margin: 0,
+    color: "#111",
   },
 
   navBtn: {
@@ -236,47 +217,67 @@ const styles = {
     padding: "8px 12px",
     borderRadius: "6px",
     border: "1px solid #ddd",
-    backgroundColor: "#fff",
+    backgroundColor:"rgba(0,0,0,0.6)",
     cursor: "pointer",
+    color:"#fff",
   },
 
   container: {
-    display: "flex",
     flex: 1,
-    backgroundColor: "#ffffff",
-  },
-
-  left: {
-    flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundImage: `url(${gasMan})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    padding:"20px",
   },
 
-  image: {
-    objectFit: "contain",
+  overlay: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    backdropFilter: "blur(8px)",
+    padding: "30px",
+    borderRadius: "15px",
+    color: "white",
+    width: "100%",
+    maxWidth: "450px",
   },
 
-  right: {
-  flex: 2,
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  color: "#111", // ✅ ADD THIS (VERY IMPORTANT)
-},
+  title: {
+    fontSize: "28px",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  subtitle: {
+    textAlign: "center",
+    color: "#ddd",
+  },
+
+  trust: {
+    fontSize: "13px",
+    color: "#bbb",
+    textAlign: "center",
+    marginBottom: "15px",
+  },
+
+  formWrapper: {
+    padding: "20px",
+    borderRadius: "12px",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    backdropFilter: "blur(10px)",
+  },
 
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
-    marginTop: "15px",
+    gap: "10px",
   },
 
   input: {
     padding: "12px",
     borderRadius: "8px",
-    border: "1px solid #ddd",
+    border: "none",
   },
 
   button: {
@@ -288,44 +289,10 @@ const styles = {
     fontWeight: "bold",
     cursor: "pointer",
   },
-
+  
   successBox: {
     textAlign: "center",
   },
-
-navbar: {
-  display: "flex",
-  justifyContent: "space-between",
-  padding: "15px 30px",
-  borderBottom: "1px solid #eee",
-  backgroundColor: "#fff",
-  color: "#111", // ✅ ADD THIS
-},
-logo: {
-  margin: 0,
-  color: "#111", // ✅ ADD THIS
-},
-navBtn: {
-  marginLeft: "10px",
-  padding: "8px 12px",
-  borderRadius: "6px",
-  border: "1px solid #ddd",
-  backgroundColor: "#fff",
-  cursor: "pointer",
-  color: "#111",
-  fontWeight: "500",
-  transition: "0.2s",
-},
-formWrapper: {
-  width: "100%",
-  maxWidth: "400px", // 🔥 limits form size
-  margin: "0 auto",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-  padding: "20px",
-  borderRadius: "12px",
-  backgroundColor: "#fff",  // 🔥 center it
-},
-
 };
 
 export default App;
